@@ -1,6 +1,6 @@
 """
 Generates synthetic train-cabin situation clips with a Cosmos3-Nano server
-(vLLM-Omni, --tensor-parallel-size 2) driven by resources/prompts.csv.
+(vLLM-Omni, --tensor-parallel-size 2) driven by resources/prompts.json.
 
 Run the server first:
 
@@ -16,7 +16,7 @@ Run the server first:
       --port 8000 --init-timeout 1800
 
 Then:
-    pip install httpx pandas pillow
+    pip install httpx pillow
     python generate_cabin_clips.py
 """
 
@@ -27,14 +27,13 @@ import logging
 import time
 from pathlib import Path
 import httpx
-import pandas as pd
 from PIL import Image, ImageOps
 
 
 # Config
 SERVER_URL = "http://localhost:8000/v1/videos/sync"
-CABIN_IMAGE_PATH = Path("resources/cabin.jpeg")
-PROMPTS_CSV = Path("resources/prompts.csv")
+CABIN_IMAGE_PATH = Path("resources/cabin_empty.jpeg")
+PROMPTS = Path("resources/prompts.json")
 OUTPUT_DIR = Path("outputs")
 
 RESOLUTION_TIER = "480p"  # "256p" | "480p" | "720p"
@@ -156,8 +155,9 @@ async def generate_clip(
 
 
 async def main() -> None:
-    prompts = pd.read_csv(PROMPTS_CSV).fillna("")
-    log.info(f"loaded {len(prompts)} prompts from {PROMPTS_CSV}")
+    with PROMPTS.open(encoding="utf-8") as f:
+        prompts = json.load(f)
+    log.info(f"loaded {len(prompts)} prompts from {PROMPTS}")
 
     image_bytes = prepare_conditioning_image(CABIN_IMAGE_PATH, RESOLUTION_TIER)
 
@@ -166,8 +166,8 @@ async def main() -> None:
 
     async with httpx.AsyncClient() as client:
         tasks = [
-            generate_clip(client, row.to_dict(), image_bytes, semaphore)
-            for _, row in prompts.iterrows()
+            generate_clip(client, row, image_bytes, semaphore)
+            for row in prompts
         ]
         t0 = time.monotonic()
         outcomes = await asyncio.gather(*tasks)

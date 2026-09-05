@@ -1,0 +1,122 @@
+[
+  {
+    "id": "0001",
+    "category": "Security",
+    "subtype": "physical_fight",
+    "expected_length_frames": 80,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fixed_ceiling_cctv",
+    "text": "Static shot from a ceiling-mounted CCTV camera inside a regional train passenger cabin, matching the reference image exactly: same seats, same window layout, same lighting. Scene begins with 6 passengers visible: 4 seated in pairs facing each other and 2 standing in the aisle. Throughout the clip all 6 remain in frame — no one enters or leaves. The two standing passengers suddenly begin shoving each other, escalating into a physical altercation with grabbing and pushing motions. The 4 seated passengers react by leaning away and turning to look, but stay seated. By the end of the clip the same 6 people are present, with the altercation still ongoing and passengers still leaning away. The train continues moving steadily, with the window background scrolling past. The camera remains completely static, fixed mount, no camera movement, no zoom, no cuts.",
+    "negative_prompt": "camera pan, camera shake, blurry, distorted architecture, extra doors, extra windows, text overlay, subtitles, cartoonish, unrealistic proportions, changing number of people, people teleporting",
+    "notes": "inspired by BOSS dataset fight scenario; keep actors mid-frame, avoid occluding exits; anomalous"
+  },
+  {
+    "id": "0002",
+    "category": "Security",
+    "subtype": "harassment",
+    "expected_length_frames": 80,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fixed_ceiling_cctv",
+    "text": "Static ceiling-mounted CCTV shot inside a commuter train carriage, matching the reference image exactly in seat layout and lighting. Scene begins with 4 passengers: one seated woman near the window, one standing man near her seat, and two other passengers seated further down the aisle who are not directly involved. Throughout the clip all 4 remain visible, no entries or exits. The standing man leans in repeatedly, gesturing and crowding the seated woman's space; she visibly shrinks back, turns away, and clutches her bag defensively. The two distant passengers glance over periodically but do not intervene. By the end of the clip the same 4 people remain, with the seated woman now standing up and stepping past the man toward the aisle to move away. The train interior lighting is steady, window background scrolls past showing motion.",
+    "negative_prompt": "camera pan, camera shake, blurry, distorted architecture, text overlay, subtitles, cartoonish, extra passengers appearing from nowhere, sudden cuts",
+    "notes": "inspired by DTU/SAMSIT harassment scenario; subtle body language emphasis over overt violence; anomalous"
+  },
+  {
+    "id": "0003",
+    "category": "Security",
+    "subtype": "weapon_visible",
+    "expected_length_frames": 64,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "side_wall_cctv",
+    "text": "Static side-wall-mounted CCTV shot inside a train carriage aisle, matching the reference image's seat rows and window spacing exactly. Scene begins with 5 passengers: 3 seated scattered throughout the visible seats and 2 standing near the carriage door at the far end. Throughout the clip all 5 remain present, no one enters or leaves the frame. One of the standing passengers pulls a knife partially into view, holding it low near their waist while the second standing passenger backs away with hands raised slightly. The 3 seated passengers notice and freeze, some turning their heads toward the exit but remaining seated. By the end of the clip the same 5 people are still present, tension unresolved, weapon still visible in the standing passenger's hand. Train is in motion, window background scrolling.",
+    "negative_prompt": "camera pan, camera shake, blurry, gore, blood, graphic violence, text overlay, subtitles, cartoonish, extra people, disappearing passengers",
+    "notes": "inspired by MoLa InCar weapon class; keep weapon low-contrast and partially obscured per safety framing; anomalous"
+  },
+  {
+    "id": "0004",
+    "category": "Medical",
+    "subtype": "fall",
+    "expected_length_frames": 64,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fixed_ceiling_cctv",
+    "text": "Static ceiling-mounted CCTV shot inside a train carriage near a set of seats, matching the reference image's layout exactly. Scene begins with 3 passengers: one elderly person standing in the aisle holding a handrail, and two seated passengers nearby. Throughout the clip all 3 remain in frame, no entries or exits. The train jolts slightly and the standing elderly passenger loses balance, stumbling and collapsing to the floor of the aisle. The two seated passengers immediately react, one leaning forward and starting to rise from their seat to help. By the end of the clip the same 3 people are present: the fallen passenger still on the floor, and the other passenger now crouched beside them checking on them. Window background shows steady train motion throughout.",
+    "negative_prompt": "camera pan, camera shake, blurry, distorted limbs, text overlay, subtitles, cartoonish, extra passengers, people vanishing",
+    "notes": "inspired by FRAIL-TRI20_DOD and BOSS fainting scenario; ensure fall trajectory realistic and non-graphic; anomalous"
+  },
+  {
+    "id": "0005",
+    "category": "Medical",
+    "subtype": "unconscious",
+    "expected_length_frames": 80,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fixed_ceiling_cctv",
+    "text": "Static ceiling-mounted CCTV shot of a train carriage seating area, matching the reference image's seat and window layout exactly. Scene begins with 4 passengers, all seated: one alone by the window, two together across the aisle, and one further down. Throughout the clip all 4 remain seated in the same positions, no entries or exits. The passenger by the window gradually slumps sideways, head tilting against the window, becoming unresponsive. The two passengers across the aisle notice after a few seconds, exchange glances, and one leans over to gently shake the slumped passenger's shoulder. By the end of the clip the same 4 people are present, with the slumped passenger still unresponsive and the concerned passenger now standing to get help. Train motion visible through the window throughout.",
+    "negative_prompt": "camera pan, camera shake, blurry, text overlay, subtitles, cartoonish, extra passengers, sudden scene cuts, unrealistic slumping physics",
+    "notes": "inspired by BOSS fainting/medical emergency scenario; keep motion subtle and gradual; anomalous"
+  },
+  {
+    "id": "0006",
+    "category": "Vandalism",
+    "subtype": "graffiti",
+    "expected_length_frames": 80,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fixed_ceiling_cctv",
+    "text": "Static ceiling-mounted CCTV shot inside a stationary train carriage at a platform, matching the reference image's wall panels and seat layout exactly. Scene begins with 2 passengers: one standing near a blank wall panel with a marker in hand, and one seated further away uninvolved. Throughout the clip both remain in frame, no one else enters or leaves. The standing passenger begins spraying and marking graffiti tags across the wall panel, glancing around occasionally. The seated passenger notices, looks over disapprovingly, but does not intervene. By the end of the clip both passengers are still present, with visible graffiti markings now covering part of the wall panel and the standing passenger stepping back to view their work. Carriage lighting is static interior lighting, train stationary.",
+    "negative_prompt": "camera pan, camera shake, blurry, offensive symbols, hate speech, legible real brand logos, text overlay, subtitles, cartoonish, extra passengers",
+    "notes": "inspired by SAMSIT window vandalism and DEGIV graffiti scenario; keep markings abstract, non-offensive scribbles; anomalous"
+  },
+  {
+    "id": "0007",
+    "category": "Overcrowding",
+    "subtype": "door_obstruction",
+    "expected_length_frames": 64,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fisheye_door_cam",
+    "text": "Static fisheye camera mounted above a train door, matching the reference image's door frame and step geometry exactly. Scene begins with 7 passengers clustered near the doorway, tightly packed. Throughout the clip the crowd fluctuates slightly as 2 additional passengers push in from outside trying to board while the doors attempt to close, bringing the peak count to 9, then settling back to about 7 as one passenger squeezes past onto the platform. One passenger's bag becomes caught in the closing doors, causing the doors to reopen and re-close repeatishly. By the end of the clip roughly 7 passengers remain crowded at the doorway, still not fully boarded or disembarked. Platform lighting steady, background shows platform elements.",
+    "negative_prompt": "camera pan, camera shake, blurry, fisheye distortion errors, text overlay, subtitles, cartoonish, empty doorway, unrealistic crowd density",
+    "notes": "inspired by PAMELA-UANDES door-zone density scenario and FRAIL-TRI20_DOD door interruption; fisheye lens distortion expected and desired; anomalous"
+  },
+  {
+    "id": "0008",
+    "category": "Normal",
+    "subtype": "normal_seated_journey",
+    "expected_length_frames": 80,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fixed_ceiling_cctv",
+    "text": "Static ceiling-mounted CCTV shot inside a regional train passenger cabin, matching the reference image exactly in seat layout and window spacing. Scene begins with 5 passengers seated calmly in scattered seats, some looking out the window, one reading on a phone, one dozing. Throughout the clip all 5 remain seated in their original positions with only minor natural movement — shifting posture, glancing around, adjusting bags — no one enters or leaves. By the end of the clip the same 5 passengers are still seated calmly, journey continuing uneventfully. Train moves steadily, window background scrolls past with daylight and passing scenery, interior lighting constant.",
+    "negative_prompt": "camera pan, camera shake, blurry, distorted architecture, text overlay, subtitles, cartoonish, sudden altercations, extra passengers appearing, unrealistic proportions",
+    "notes": "normal baseline scenario for BOSS-style calm cabin footage; used as negative/normal class exemplar; normal"
+  },
+  {
+    "id": "0009",
+    "category": "Normal",
+    "subtype": "normal_boarding",
+    "expected_length_frames": 64,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "fisheye_door_cam",
+    "text": "Static fisheye camera mounted above a train door at a station platform, matching the reference image's door frame and step geometry exactly. Scene begins with 1 passenger waiting on the platform near the open doors. Throughout the clip 3 more passengers approach and board in an orderly, spaced-out manner one after another, bringing the total to 4 passengers now standing just inside the doorway; no pushing or crowding occurs. By the end of the clip all 4 passengers have boarded calmly and the doors begin to close smoothly with no obstruction. Platform lighting steady, no crowding or bag entrapment.",
+    "negative_prompt": "camera pan, camera shake, blurry, fisheye distortion errors, text overlay, subtitles, cartoonish, aggressive pushing, door obstruction, overcrowding",
+    "notes": "normal baseline counterpart to door_obstruction scenario, orderly boarding; PAMELA-UANDES style calm door-zone footage; normal"
+  },
+  {
+    "id": "0010",
+    "category": "Normal",
+    "subtype": "ticket_check",
+    "expected_length_frames": 80,
+    "resolution": "832x480",
+    "fps": 16,
+    "camera_view": "side_wall_cctv",
+    "text": "Static side-wall-mounted CCTV shot inside a train carriage aisle, matching the reference image's seat rows and window spacing exactly. Scene begins with 4 seated passengers and 1 standing train conductor who has just entered the frame from the carriage end. Throughout the clip the conductor moves calmly down the aisle, pausing briefly at each seated passenger to check tickets; all 5 people remain in frame throughout, no one else enters or leaves. Passengers hand over tickets or phones without incident, exchanging brief polite gestures with the conductor. By the end of the clip the conductor has reached the far end of the visible aisle, having checked all 4 passengers, and exits the frame at the very last moment while the 4 passengers remain seated normally. Train in steady motion, window background scrolling calmly.",
+    "negative_prompt": "camera pan, camera shake, blurry, distorted architecture, text overlay, subtitles, cartoonish, conflict, aggressive gestures, extra unexplained passengers",
+    "notes": "normal baseline scenario for routine conductor interaction, no security relevance; normal"
+  }
+]
