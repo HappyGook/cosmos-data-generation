@@ -33,7 +33,7 @@ from PIL import Image, ImageOps
 # Config
 SERVER_URL = "http://localhost:8000/v1/videos/sync"
 CABIN_IMAGE_PATH = Path("resources/cabin_empty.jpeg")
-PROMPTS = Path("resources/prompts.json")
+PROMPTS = Path("resources/prompts_longer.json")
 OUTPUT_DIR = Path("outputs")
 
 RESOLUTION_TIER = "480p"  # "256p" | "480p" | "720p"
@@ -49,7 +49,7 @@ DISABLE_GUARDRAILS = True  # face-blur guardrail
 
 # request-queue depth
 MAX_CONCURRENT_REQUESTS = 3
-REQUEST_TIMEOUT_S = 900.0
+REQUEST_TIMEOUT_S = 1500.0
 MAX_RETRIES = 2
 RETRY_BACKOFF_S = 5  # multiplied by attempt number
 

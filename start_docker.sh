@@ -24,6 +24,7 @@ PORT="${PORT:-8000}"
 GPUS="${GPUS:-all}"                # e.g. "all" or "0,1"
 TENSOR_PARALLEL_SIZE="${TENSOR_PARALLEL_SIZE:-1}"
 INIT_TIMEOUT="${INIT_TIMEOUT:-1800}"
+VIDEO_SYNC_TIMEOUT="${VIDEO_SYNC_TIMEOUT:-1500}"  # VLLM_OMNI_VIDEO_SYNC_TIMEOUT: /v1/videos/sync generation timeout (s)
 CREATE_START_TIMEOUT="${CREATE_START_TIMEOUT:-120}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$(pwd)}"
 HF_CACHE_DIR="${HF_CACHE_DIR:-/home/iis/.cache/huggingface}"
@@ -127,6 +128,7 @@ RUN_CMD=(docker run -d
     --name "$CONTAINER_NAME"
     --gpus "$GPUS"
     -e HF_HUB_DISABLE_XET=1
+    -e VLLM_OMNI_VIDEO_SYNC_TIMEOUT="$VIDEO_SYNC_TIMEOUT"
     -v "$HF_CACHE_DIR:/root/.cache/huggingface"
     -v "$WORKSPACE_DIR:/workspace"
     -p "${PORT}:8000"
