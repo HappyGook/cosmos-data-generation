@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 For every row in resources/prompts.csv, use FLUX.2 [dev]
 to edit the empty cabin plate into a conditioning still frame (N people, given poses/behaviour)
@@ -31,11 +32,7 @@ CONDITIONING_SIZES = {
     "720p": (1280, 720),
 }
 
-# Officially published 4-bit checkpoint (DiT + Mistral text encoder both
-# quantized) -- safe default that comfortably fits Spark's 128GB with a
-# lot of headroom. Swap for a locally FP8-quantized load if you want the
-# quality bump; see the diffusers FLUX.2 quantization guide.
-FLUX2_REPO_ID = "diffusers/FLUX.2-dev-bnb-4bit"
+FLUX2_REPO_ID = "black-forest-labs/FLUX.2-dev"
 
 NUM_INFERENCE_STEPS = 50
 GUIDANCE_SCALE = 4.0
@@ -64,12 +61,45 @@ def build_edit_prompt(row: dict) -> str:
     ).strip()
 
 
+def load_pipeline(precision: str):
+    """Loads FLUX.2 [dev] either at full bf16 precision, or with the
+    transformer + text encoder quantized to FP8 on load.
+    """
+    import torch
+    from diffusers import Flux2Pipeline
+
+    if precision == "bf16":
+        log.info("loading %s in full bf16 precision (~112GB combined weights)", FLUX2_REPO_ID)
+        pipe = Flux2Pipeline.from_pretrained(FLUX2_REPO_ID, torch_dtype=torch.bfloat16)
+
+    elif precision == "fp8":
+        # Quantizes the DiT and the Mistral text encoder to FP8 on load,
+        # using diffusers' quantization-config plumbing.
+        from diffusers import TorchAoConfig
+        quant_config = TorchAoConfig("float8wo")  # weight-only FP8
+        log.info("loading %s with FP8 weight quantization (~55-60GB combined)", FLUX2_REPO_ID)
+        pipe = Flux2Pipeline.from_pretrained(
+            FLUX2_REPO_ID,
+            transformer_quantization_config=quant_config,
+            text_encoder_quantization_config=quant_config,
+            torch_dtype=torch.bfloat16,
+        )
+    else:
+        raise ValueError(f"unknown precision: {precision}")
+
+    pipe.to("cuda")
+    pipe.set_progress_bar_config(disable=True)
+    return pipe
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--prompts", type=Path, default=Path("resources/prompts.csv"))
     ap.add_argument("--cabin", type=Path, default=Path("resources/cabin.jpeg"))
     ap.add_argument("--outdir", type=Path, default=Path("resources/cabin_conditioned"))
     ap.add_argument("--resolution", choices=list(CONDITIONING_SIZES), default="480p")
+    ap.add_argument("--precision", choices=["bf16", "fp8"], default="bf16",
+                     help="bf16 = full precision (default). fp8 = quantized")
     ap.add_argument("--steps", type=int, default=NUM_INFERENCE_STEPS)
     ap.add_argument("--guidance-scale", type=float, default=GUIDANCE_SCALE)
     args = ap.parse_args()
@@ -88,7 +118,6 @@ def main() -> int:
     # Deferred until work confirmed
     import torch
     from PIL import Image, ImageOps
-    from diffusers import Flux2Pipeline
 
     target_w, target_h = CONDITIONING_SIZES[args.resolution]
 
@@ -97,11 +126,7 @@ def main() -> int:
         return ImageOps.pad(img, (target_w, target_h), color=(0, 0, 0), centering=(0.5, 0.5))
 
     cabin_plate = load_plate(args.cabin)
-
-    log.info("loading %s ...", FLUX2_REPO_ID)
-    pipe = Flux2Pipeline.from_pretrained(FLUX2_REPO_ID, torch_dtype=torch.bfloat16)
-    pipe.to("cuda")
-    pipe.set_progress_bar_config(disable=True)
+    pipe = load_pipeline(args.precision)
 
     for row in todo:
         clip_id = row["id"]
