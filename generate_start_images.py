@@ -44,6 +44,9 @@ def load_prompts(path: Path) -> list[dict]:
     for r in rows:
         r["num_people"] = int(r.get("num_people") or 1)
         r["poses"] = [p.strip() for p in (r.get("poses") or "").split(";") if p.strip()]
+        for key in ("setting", "lighting", "train_state", "camera_view"):
+            if r.get(key):
+                r[key] = r[key].strip()
     return rows
 
 
@@ -52,13 +55,38 @@ def missing_rows(rows: list[dict], outdir: Path) -> list[dict]:
 
 
 def build_edit_prompt(row: dict) -> str:
-    poses = ", ".join(row["poses"]) if row["poses"] else "neutral"
+    """Builds the FLUX edit prompt for the *starting* conditioning frame.
+
+    Uses the structured columns (num_people, poses, setting, lighting,
+    train_state, camera_view) so the still image only reflects the
+    pre-event state, and falls back to image_prompt/text for any
+    remaining scene-specific detail (props, wall panels, etc.).
+    """
+    parts = [f"Edit this train carriage photo: add exactly {row['num_people']} people."]
+
+    if row["poses"]:
+        poses = "; ".join(row["poses"])
+        parts.append(f"Starting poses/behaviour: {poses}.")
+
+    parts.append(f"Shot from fixed_ceiling_cctv.")
+
+    if row.get("setting"):
+        parts.append(f"Setting: {row['setting']}.")
+
+    if row.get("lighting"):
+        parts.append(f"Lighting: {row['lighting']}.")
+
+    if row.get("train_state"):
+        parts.append(f"Train state: {row['train_state']}.")
+
+    # Any remaining scene-specific detail not covered by the structured
+    # fields above (props, wall panels, exact framing notes, etc.).
     base = row.get("image_prompt") or row.get("text") or ""
-    return (
-        f"Edit this train carriage photo: add exactly {row['num_people']} people, "
-        f"poses/behaviour: {poses}. {base} "
-        "Keep the carriage interior, camera angle, and lighting unchanged."
-    ).strip()
+    if base:
+        parts.append(base)
+
+    parts.append("Keep the carriage interior, camera angle, and lighting unchanged.")
+    return " ".join(parts)
 
 
 def load_pipeline(precision: str):
