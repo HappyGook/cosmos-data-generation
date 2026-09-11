@@ -19,3 +19,38 @@ prepares `resources/cabin.jpeg`, sends concurrent requests to the running server
 1. `./start_server.sh` — wait for `server is READY at http://localhost:8000` (first run downloads the checkpoint, can take a while)
 2. `python main.py` — processes every row in `prompts.csv`, skips clips already in `outputs/`
 3. When done: `docker stop cosmos3-nano-server` to free the GPUs
+
+## Project pipeline
+
+```
+resources/prompts.csv
+        │
+        │ csv_to_json.py
+        ▼
+resources/prompts.json
+        │
+        │
+        ├──────────────────────────────┐
+        │                              │
+        ▼                              ▼
+generate_start_images.py          main.py
+        │                              │
+        │ FLUX.2 [dev]                 │ loads prompts.json
+        ▼                              │ + conditioning images
+resources/cabin_conditioned/           │
+   0.jpg                               │ HTTP /v1/videos/sync
+   1.jpg                               │
+   ...                                 ▼
+        │                       Cosmos3-Nano
+        │                       vLLM-Omni server
+        │                              ▲
+        │                              │
+        └───────────────► main.py ◄────┘
+                                │
+                                │ generated clips
+                                ▼
+                           outputs/
+                            ├── 0.mp4
+                            ├── 1.mp4
+                            └── ...
+```

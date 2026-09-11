@@ -35,7 +35,7 @@ CONDITIONING_SIZES = {
 FLUX2_REPO_ID = "black-forest-labs/FLUX.2-dev"
 
 NUM_INFERENCE_STEPS = 50
-GUIDANCE_SCALE = 4.0
+GUIDANCE_SCALE = 2.0
 
 
 def load_prompts(path: Path) -> list[dict]:
@@ -62,19 +62,20 @@ def build_edit_prompt(row: dict) -> str:
     pre-event state, and falls back to image_prompt/text for any
     remaining scene-specific detail (props, wall panels, etc.).
     """
-    parts = [f"Edit this train carriage photo: add exactly {row['num_people']} people."]
+    parts = [
+        "This is a photo-edit task, not a new scene. "
+        "Keep the train carriage completely unchanged: same camera angle and lens, "
+        "same framing and crop, same wall panels, seats, handrails, windows, doors, "
+        "floor, and lighting as the input image. "
+        f"The only change is: add exactly {row['num_people']} people into this scene."
+    ]
 
     if row["poses"]:
         poses = "; ".join(row["poses"])
-        parts.append(f"Starting poses/behaviour: {poses}.")
-
-    parts.append(f"Shot from fixed_ceiling_cctv.")
+        parts.append(f"Their starting poses/behaviour: {poses}.")
 
     if row.get("setting"):
-        parts.append(f"Setting: {row['setting']}.")
-
-    if row.get("lighting"):
-        parts.append(f"Lighting: {row['lighting']}.")
+        parts.append(f"Additional context: {row['setting']}.")
 
     if row.get("train_state"):
         parts.append(f"Train state: {row['train_state']}.")
@@ -85,7 +86,10 @@ def build_edit_prompt(row: dict) -> str:
     if base:
         parts.append(base)
 
-    parts.append("Keep the carriage interior, camera angle, and lighting unchanged.")
+    parts.append(
+        "Do not alter the carriage geometry, camera perspective, colors, or background "
+        "in any way. Output should be pixel-identical to the input except for the added people."
+    )
     return " ".join(parts)
 
 
@@ -101,21 +105,27 @@ def load_pipeline(precision: str):
         pipe = Flux2Pipeline.from_pretrained(FLUX2_REPO_ID, torch_dtype=torch.bfloat16)
 
     elif precision == "fp8":
-        # Quantizes the DiT and the Mistral text encoder to FP8 on load,
-        # using diffusers' quantization-config plumbing.
-        from diffusers import TorchAoConfig
-        quant_config = TorchAoConfig("float8wo")  # weight-only FP8
+        from diffusers import TorchAoConfig as DiffusersTorchAoConfig
+        from diffusers import PipelineQuantizationConfig
+        from transformers import TorchAoConfig as TransformersTorchAoConfig
+        from torchao.quantization import Float8WeightOnlyConfig
+
+        quant_config = PipelineQuantizationConfig(
+            quant_mapping={
+                "transformer": DiffusersTorchAoConfig(Float8WeightOnlyConfig()),
+                "text_encoder": TransformersTorchAoConfig(Float8WeightOnlyConfig()),
+            }
+        )
         log.info("loading %s with FP8 weight quantization (~55-60GB combined)", FLUX2_REPO_ID)
         pipe = Flux2Pipeline.from_pretrained(
             FLUX2_REPO_ID,
-            transformer_quantization_config=quant_config,
-            text_encoder_quantization_config=quant_config,
+            quantization_config=quant_config,
             torch_dtype=torch.bfloat16,
         )
     else:
         raise ValueError(f"unknown precision: {precision}")
 
-    pipe.to("cuda")
+    pipe.enable_model_cpu_offload()
     pipe.set_progress_bar_config(disable=True)
     return pipe
 

@@ -32,8 +32,9 @@ from PIL import Image, ImageOps
 
 # Config
 SERVER_URL = "http://localhost:8000/v1/videos/sync"
-CABIN_IMAGE_PATH = Path("resources/cabin_empty.jpeg")
-PROMPTS = Path("resources/prompts_longer.json")
+CABIN_IMAGE_PATH = Path("resources/cabin.jpeg")
+CABIN_IMAGE_PREFIX = "resources/cabin_conditioned/"
+PROMPTS = Path("resources/prompts.json")
 OUTPUT_DIR = Path("outputs")
 
 RESOLUTION_TIER = "480p"  # "256p" | "480p" | "720p"
@@ -159,14 +160,19 @@ async def main() -> None:
         prompts = json.load(f)
     log.info(f"loaded {len(prompts)} prompts from {PROMPTS}")
 
-    image_bytes = prepare_conditioning_image(CABIN_IMAGE_PATH, RESOLUTION_TIER)
+    image_bytes_by_id = {}
+    for row in prompts:
+        clip_id = row["id"]
+        image_bytes_by_id[clip_id] = prepare_conditioning_image(
+            Path(CABIN_IMAGE_PREFIX + clip_id + ".jpg"), RESOLUTION_TIER
+        )
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     results = {"ok": 0, "failed": 0}
 
     async with httpx.AsyncClient() as client:
         tasks = [
-            generate_clip(client, row, image_bytes, semaphore)
+            generate_clip(client, row, image_bytes_by_id[row["id"]], semaphore)
             for row in prompts
         ]
         t0 = time.monotonic()
