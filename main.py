@@ -24,6 +24,7 @@ import asyncio
 import io
 import json
 import logging
+import os
 import time
 from pathlib import Path
 import httpx
@@ -33,9 +34,9 @@ from PIL import Image, ImageOps
 # Config
 SERVER_URL = "http://localhost:8000/v1/videos/sync"
 CABIN_IMAGE_PATH = Path("resources/cabin.jpeg")
-CABIN_IMAGE_PREFIX = "resources/cabin_conditioned/"
-PROMPTS = Path("resources/prompts.json")
-OUTPUT_DIR = Path("outputs")
+CABIN_IMAGE_PREFIX = os.environ.get("CABIN_IMAGE_PREFIX", "resources/real_batch_03/cabin_conditioned/")
+PROMPTS = Path(os.environ.get("PROMPTS", "resources/real_batch_03/prompts_real.json"))
+OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "outputs"))
 
 RESOLUTION_TIER = "480p"  # "256p" | "480p" | "720p"
 CONDITIONING_SIZES = {
@@ -49,8 +50,8 @@ GUIDANCE_SCALE = 6.0
 DISABLE_GUARDRAILS = True  # face-blur guardrail
 
 # request-queue depth
-MAX_CONCURRENT_REQUESTS = 3
-REQUEST_TIMEOUT_S = 1500.0
+MAX_CONCURRENT_REQUESTS = 1
+REQUEST_TIMEOUT_S = 3600.0
 MAX_RETRIES = 2
 RETRY_BACKOFF_S = 5  # multiplied by attempt number
 
@@ -98,7 +99,7 @@ async def generate_clip(
         return True
 
     target_w, target_h = CONDITIONING_SIZES[RESOLUTION_TIER]
-    frames = int(row.get("expected_length_frames") or 80)
+    frames = int(row.get("expected_length_frames") or 480)
     fps = int(row.get("fps") or 24)
 
     data = {
@@ -164,7 +165,7 @@ async def main() -> None:
     for row in prompts:
         clip_id = row["id"]
         image_bytes_by_id[clip_id] = prepare_conditioning_image(
-            Path(CABIN_IMAGE_PREFIX + clip_id + ".jpg"), RESOLUTION_TIER
+            Path(CABIN_IMAGE_PREFIX + clip_id + ".jpeg"), RESOLUTION_TIER
         )
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
