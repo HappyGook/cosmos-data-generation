@@ -19,7 +19,7 @@ def row_to_record(row: dict) -> dict:
 
 
 def main() -> None:
-    src = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("resources/prompts.csv")
+    src = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("prompts.csv")
     dst = Path(sys.argv[2]) if len(sys.argv) > 2 else src.with_suffix(".json")
 
     with src.open(newline="", encoding="utf-8") as f:

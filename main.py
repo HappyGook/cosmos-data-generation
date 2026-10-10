@@ -19,7 +19,7 @@ Then:
     pip install httpx pillow
     python generate_cabin_clips.py
 """
-
+import argparse
 import asyncio
 import io
 import json
@@ -32,11 +32,40 @@ from PIL import Image, ImageOps
 
 
 # Config
-SERVER_URL = "http://localhost:8000/v1/videos/sync"
+BACKENDS = {
+    # size: (w, h) used for BOTH the request and the letterboxed conditioning image
+    # steps/guidance None -> server's pipeline default is used
+    # negative: "always" | "if_set" | "never"   (distilled LTX rejects negative prompts)
+    # frames_8k1: LTX requires num_frames = 8k+1
+    "cosmos": dict(
+        size=(832, 480), steps=35, guidance=6.0, negative="always", frames_8k1=False,
+        extra_params={"use_resolution_template": False,
+                      "use_duration_template": False,
+                      "guardrails": False},   # face-blur guardrail off
+    ),
+    # one-stage: dims divisible by 32; two-stage: divisible by 64
+    "ltx-distilled-one": dict(size=(960, 544),  steps=None, guidance=None,
+                              negative="never",  frames_8k1=True, extra_params=None),
+    "ltx-distilled-two": dict(size=(1280, 704), steps=None, guidance=None,
+                              negative="never",  frames_8k1=True, extra_params=None),
+    "ltx-full-one":      dict(size=(960, 544),  steps=None, guidance=None,
+                              negative="if_set", frames_8k1=True, extra_params=None),
+    "ltx-full-two":      dict(size=(1280, 704), steps=None, guidance=None,
+                              negative="if_set", frames_8k1=True, extra_params=None),
+}
+
+_ap = argparse.ArgumentParser()
+_ap.add_argument("--backend", choices=list(BACKENDS), default="cosmos")
+_ap.add_argument("--url", default=os.environ.get("SERVER_URL", "http://localhost:8000/v1/videos/sync"))
+
+ARGS = _ap.parse_args()
+CFG = BACKENDS[ARGS.backend]
+SERVER_URL = ARGS.url
 CABIN_IMAGE_PATH = Path("resources/cabin.jpeg")
-CABIN_IMAGE_PREFIX = os.environ.get("CABIN_IMAGE_PREFIX", "resources/real_batch_03/cabin_conditioned/")
-PROMPTS = Path(os.environ.get("PROMPTS", "resources/real_batch_03/prompts_real.json"))
-OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "outputs"))
+CABIN_IMAGE_PREFIX = os.environ.get("CABIN_IMAGE_PREFIX", "resources/real_batch_6/cabin_conditioned/")
+PROMPTS = Path(os.environ.get("PROMPTS", "resources/real_batch_6/prompts_real.json"))
+OUTPUT_DIR = Path(os.environ.get(
+    "OUTPUT_DIR", f"outputs_{ARGS.backend}"))
 
 RESOLUTION_TIER = "480p"  # "256p" | "480p" | "720p"
 CONDITIONING_SIZES = {
@@ -68,7 +97,7 @@ logging.basicConfig(
 log = logging.getLogger("cosmos3_gen")
 
 def prepare_conditioning_image(image_path: Path, resolution_tier: str) -> bytes:
-    target_w, target_h = CONDITIONING_SIZES[resolution_tier]
+    target_w, target_h = CFG["size"]
     img = Image.open(image_path).convert("RGB")
     log.info(f"source cabin image: {img.size[0]}x{img.size[1]}")
 
@@ -78,7 +107,7 @@ def prepare_conditioning_image(image_path: Path, resolution_tier: str) -> bytes:
         color=(0, 0, 0),
         centering=(0.5, 0.5),
     )
-    log.info(f"conditioning image prepared: {target_w}x{target_h} ({resolution_tier}, letterboxed)")
+    log.info(f"conditioning image prepared: {target_w}x{target_h} ({ARGS.backend}, letterboxed)")
 
     buf = io.BytesIO()
     padded.save(buf, format="JPEG", quality=95)
@@ -98,26 +127,27 @@ async def generate_clip(
         log.info(f"[{clip_id}] already exists, skipping")
         return True
 
-    target_w, target_h = CONDITIONING_SIZES[RESOLUTION_TIER]
+    target_w, target_h = CFG["size"]
     frames = int(row.get("expected_length_frames") or 480)
+    if CFG["frames_8k1"]:
+        frames = max(9, round((frames - 1) / 8) * 8 + 1)  # 480 -> 481
     fps = int(row.get("fps") or 24)
-
     data = {
         "prompt": str(row.get("text", "")),
-        "negative_prompt": str(row.get("negative_prompt", "") or ""),
         "size": f"{target_w}x{target_h}",
         "num_frames": str(frames),
         "fps": str(fps),
-        "num_inference_steps": str(NUM_INFERENCE_STEPS),
-        "guidance_scale": str(GUIDANCE_SCALE),
-        "extra_params": json.dumps(
-            {
-                "use_resolution_template": False,
-                "use_duration_template": False,
-                "guardrails": not DISABLE_GUARDRAILS,
-            }
-        ),
     }
+    neg = str(row.get("negative_prompt", "") or "")
+    if CFG["negative"] == "always" or (CFG["negative"] == "if_set" and neg):
+        data["negative_prompt"] = neg
+    if CFG["steps"] is not None:
+        data["num_inference_steps"] = str(CFG["steps"])
+    if CFG["guidance"] is not None:
+        data["guidance_scale"] = str(CFG["guidance"])
+    if CFG["extra_params"]:
+        data["extra_params"] = json.dumps(CFG["extra_params"])
+
     files = {"input_reference": (f"{clip_id}_ref.jpg", image_bytes, "image/jpeg")}
 
     async with semaphore:
